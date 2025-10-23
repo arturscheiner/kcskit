@@ -1,15 +1,41 @@
-# kcskit 0.1.0 — Kaspersky Container Security CLI
+# kcskit v0.1.0-alpha — Kaspersky Container Security CLI
 
-kcskit is a small command-line utility to interact with Kaspersky Container Security (KCS).
-It provides configuration management, a reusable API client, and commands to inspect a KCS deployment (health, integrations, images, clusters, scans).
+`kcskit` is a lightweight command-line utility for interacting with the Kaspersky Container Security (KCS) API. It simplifies managing and inspecting a KCS deployment directly from your terminal.
+
+## Table of Contents
+
+- Features
+- Prerequisites
+- Installation
+- Configuration
+- Usage
+  - Global Flags
+  - Command Examples
+- Project Layout
+- Extending
 
 ## Features
+
 - Save API base URL, token and optional CA certificate to a local YAML config (`$HOME/.kcskit/config`)
 - Reusable API client that preserves the configured base URL and token
 - Human-friendly tabbed-table output by default; raw JSON via `-o json`
 - Global `-i` / `--invalid-cert` flag to skip TLS verification (lab/test only)
 - `--ca_cert` accepts a PEM literal, a file path, or `-` to read from stdin
-- Commands: config, config check, registries, images (list / scan), clusters
+- Commands: `config`, `config check`, `registries`, `images` (list / scan), `clusters`
+
+## Prerequisites
+
+- Access to a **Kaspersky Container Security (KCS)** instance.
+- An **API token** generated from your KCS user profile.
+- **Go 1.18+** (if building from source).
+
+## Installation
+
+### From Source
+
+```bash
+go install github.com/arturscheiner/kcskit@latest
+```
 
 ## Configuration
 
