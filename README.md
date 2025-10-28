@@ -1,4 +1,4 @@
-# 🛡️ kcskit v0.1.0-alpha — Kaspersky Container Security CLI
+# 🛡️ kcskit v0.1.1 — Kaspersky Container Security CLI
 
 `kcskit` is a lightweight command-line utility for interacting with the Kaspersky Container Security (KCS) API. It simplifies managing and inspecting a KCS deployment directly from your terminal.
 
