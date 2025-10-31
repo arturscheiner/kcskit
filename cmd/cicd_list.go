@@ -6,19 +6,21 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"text/tabwriter"
 
 	ctrl "github.com/arturscheiner/kcskit/internal/controller"
+	"github.com/arturscheiner/kcskit/internal/model"
 	"github.com/spf13/cobra"
 )
 
 var (
-	cicdOutput      string
-	flagCicdPage         int
-	flagCicdLimit        int
-	flagCicdSort         string
-	flagCicdBy           string
-	flagCicdBuildNumber  string
+	cicdOutput            string
+	flagCicdPage          int
+	flagCicdLimit         int
+	flagCicdSort          string
+	flagCicdBy            string
+	flagCicdBuildNumber   string
 	flagCicdBuildPipeline string
 )
 
@@ -37,7 +39,7 @@ var cicdListCmd = &cobra.Command{
 		page := strconv.Itoa(flagCicdPage)
 		limit := strconv.Itoa(flagCicdLimit)
 
-		items, body, err := ctrl.ListCicd(cfg, InvalidCert, page, limit, flagCicdSort, flagCicdBy, flagCicdBuildNumber, flagCicdBuildPipeline)
+		items, body, endpoint, err := ctrl.ListCicd(cfg, InvalidCert, page, limit, flagCicdSort, flagCicdBy, flagCicdBuildNumber, flagCicdBuildPipeline)
 		if err != nil {
 			fmt.Println("failed to list clusters:", err)
 			if body != "" {
@@ -53,6 +55,26 @@ var cicdListCmd = &cobra.Command{
 			} else {
 				fmt.Println(pretty.String())
 			}
+			return nil
+		} else if cicdOutput == "ollama" {
+			var risks []string
+			for _, item := range items.Items {
+				risks = append(risks, item.RiskRating)
+			}
+
+			header := model.OllamaHeader{
+				Command:     strings.Join(os.Args, " "),
+				Cluster:     "",
+				Risk:        strings.Join(risks, ", "),
+				ReportTitle: "Kaspersky Container Security CI/CD Assessment Report.",
+				ApiEndpoint: endpoint,
+			}
+			response, err := ctrl.SendToOllama(body, header)
+			if err != nil {
+				fmt.Println("failed to send to ollama:", err)
+				os.Exit(1)
+			}
+			fmt.Println(response)
 			return nil
 		}
 
@@ -76,5 +98,5 @@ func init() {
 	cicdListCmd.Flags().StringVar(&flagCicdBuildNumber, "build-number", "", "Filter by build number.")
 	cicdListCmd.Flags().StringVar(&flagCicdBuildPipeline, "build-pipeline", "", "Filter by build pipeline.")
 
-	cicdListCmd.Flags().StringVarP(&cicdOutput, "output", "o", "", "output format (\"json\" for raw JSON output). Default: tabbed table")
+	cicdListCmd.Flags().StringVarP(&cicdOutput, "output", "o", "", "output format (\"json\" for raw JSON output, \"ollama\" to send to Ollama). Default: tabbed table")
 }

@@ -16,6 +16,8 @@ import (
 var tokenFlag string
 var endpointFlag string
 var caCertFlag string
+var aiOllamaEndpointFlag string
+var aiOllamaModelFlag string
 
 // configCmd represents the config command
 var configCmd = &cobra.Command{
@@ -37,7 +39,7 @@ kcskit config --ca_cert "$(cat /path/to/ca.pem)" --endpoint https://kcs.example.
 The ca_cert value is stored as the 'ca_cert' field in the YAML config at $HOME/.kcskit/config.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// If no flags provided, show help
-		if tokenFlag == "" && endpointFlag == "" && caCertFlag == "" {
+		if tokenFlag == "" && endpointFlag == "" && caCertFlag == "" && aiOllamaEndpointFlag == "" && aiOllamaModelFlag == "" {
 			_ = cmd.Help()
 			return
 		}
@@ -63,7 +65,7 @@ The ca_cert value is stored as the 'ca_cert' field in the YAML config at $HOME/.
 			// otherwise: treat caCertFlag as the literal PEM text (backwards compatible)
 		}
 
-		if err := ctrl.SaveConfig(tokenFlag, endpointFlag, caCertContent); err != nil {
+		if err := ctrl.SaveConfig(tokenFlag, endpointFlag, caCertContent, aiOllamaEndpointFlag, aiOllamaModelFlag); err != nil {
 			fmt.Println("error writing config file:", err)
 		} else {
 			fmt.Println("configuration saved")
@@ -76,5 +78,7 @@ func init() {
 	configCmd.Flags().StringVar(&tokenFlag, "token", "", "the API token value defined in the KCS web console's user my profile")
 	configCmd.Flags().StringVar(&endpointFlag, "endpoint", "", "the API endpoint URL, e.g. https://kcs.example.com/api/")
 	configCmd.Flags().StringVar(&caCertFlag, "ca_cert", "", "CA certificate PEM text or path to a PEM file. Use '-' to read from stdin.")
+	configCmd.Flags().StringVar(&aiOllamaEndpointFlag, "ai-ollama-endpoint", "", "the Ollama API endpoint URL")
+	configCmd.Flags().StringVar(&aiOllamaModelFlag, "ai-ollama-model", "", "the Ollama model name")
 	rootCmd.AddCommand(configCmd)
 }

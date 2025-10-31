@@ -7,11 +7,13 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
 	ctrl "github.com/arturscheiner/kcskit/internal/controller"
+	"github.com/arturscheiner/kcskit/internal/model"
 )
 
 var clustersOutput string
@@ -52,7 +54,7 @@ var clustersListCmd = &cobra.Command{
 		}
 		rawQuery := v.Encode()
 
-		items, body, err := ctrl.ListClusters(cfg, InvalidCert, rawQuery)
+		items, body, endpoint, err := ctrl.ListClusters(cfg, InvalidCert, rawQuery)
 		if err != nil {
 			fmt.Println("failed to list clusters:", err)
 			if body != "" {
@@ -68,6 +70,28 @@ var clustersListCmd = &cobra.Command{
 			} else {
 				fmt.Println(pretty.String())
 			}
+			return
+		} else if clustersOutput == "ollama" {
+			var clusterNames []string
+			var risks []string
+			for _, item := range items {
+				clusterNames = append(clusterNames, item.ClusterName)
+				risks = append(risks, item.RiskRating)
+			}
+
+			header := model.OllamaHeader{
+				Command:     strings.Join(os.Args, " "),
+				Cluster:     strings.Join(clusterNames, ", "),
+				Risk:        strings.Join(risks, ", "),
+				ReportTitle: "Kaspersky Container Security Cluster Assessment Report.",
+				ApiEndpoint: endpoint,
+			}
+			response, err := ctrl.SendToOllama(body, header)
+			if err != nil {
+				fmt.Println("failed to send to ollama:", err)
+				os.Exit(1)
+			}
+			fmt.Println(response)
 			return
 		}
 
@@ -89,5 +113,5 @@ func init() {
 	clustersListCmd.Flags().StringVar(&flagClusterBy, "by", "asc", "sort order (asc|desc)")
 	clustersListCmd.Flags().StringSliceVar(&flagClusterScopes, "scopes", nil, "filter by scopes (repeatable)")
 
-	clustersListCmd.Flags().StringVarP(&clustersOutput, "output", "o", "", "output format (\"json\" for raw JSON output). Default: tabbed table")
+	clustersListCmd.Flags().StringVarP(&clustersOutput, "output", "o", "", "output format (\"json\" for raw JSON output, \"ollama\" to send to Ollama). Default: tabbed table")
 }

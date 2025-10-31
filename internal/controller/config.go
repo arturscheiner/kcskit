@@ -10,11 +10,13 @@ import (
 )
 
 // SaveConfig saves token/endpoint/ca_cert (merging with existing).
-func SaveConfig(token, endpoint, caCert string) error {
+func SaveConfig(token, endpoint, caCert, aiOllamaEndpoint, aiOllamaModel string) error {
 	toSave := model.Config{
-		Token:    token,
-		Endpoint: endpoint,
-		CaCert:   caCert,
+		Token:            token,
+		Endpoint:         endpoint,
+		CaCert:           caCert,
+		AiOllamaEndpoint: aiOllamaEndpoint,
+		AiOllamaModel:    aiOllamaModel,
 	}
 	return cfgsvc.Save(toSave)
 }

@@ -6,11 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
 	ctrl "github.com/arturscheiner/kcskit/internal/controller"
+	"github.com/arturscheiner/kcskit/internal/model"
 )
 
 var imagesScanOutput string
@@ -38,7 +40,7 @@ var imagesScanCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		job, body, err := ctrl.CreateScan(cfg, InvalidCert, flagArtifact, flagRegistryID)
+		job, body, endpoint, err := ctrl.CreateScan(cfg, InvalidCert, flagArtifact, flagRegistryID)
 		if err != nil {
 			fmt.Println("failed to create scan:", err)
 			if body != "" {
@@ -55,6 +57,21 @@ var imagesScanCmd = &cobra.Command{
 				fmt.Println(pretty.String())
 			}
 			return
+		} else if imagesScanOutput == "ollama" {
+			header := model.OllamaHeader{
+				Command:     strings.Join(os.Args, " "),
+				Cluster:     "",
+				Risk:        job.Status,
+				ReportTitle: "Kaspersky Container Security Image Scan Assessment Report.",
+				ApiEndpoint: endpoint,
+			}
+			response, err := ctrl.SendToOllama(body, header)
+			if err != nil {
+				fmt.Println("failed to send to ollama:", err)
+				os.Exit(1)
+			}
+			fmt.Println(response)
+			return
 		}
 
 		// default tabbed table: ID | Artifact | Scanner | Status
@@ -70,7 +87,7 @@ func init() {
 
 	imagesScanCmd.Flags().StringVar(&flagArtifact, "artifact", "", "artifact reference, e.g. nginx:latest (required)")
 	imagesScanCmd.Flags().StringVar(&flagRegistryID, "registry", "", "registry ID where the artifact resides (required)")
-	imagesScanCmd.Flags().StringVarP(&imagesScanOutput, "output", "o", "", "output format (\"json\" for raw JSON output). Default: tabbed table")
+	imagesScanCmd.Flags().StringVarP(&imagesScanOutput, "output", "o", "", "output format (\"json\" for raw JSON output, \"ollama\" to send to Ollama). Default: tabbed table")
 
 	_ = imagesScanCmd.MarkFlagRequired("artifact")
 	_ = imagesScanCmd.MarkFlagRequired("registry")

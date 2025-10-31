@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
 	ctrl "github.com/arturscheiner/kcskit/internal/controller"
+	"github.com/arturscheiner/kcskit/internal/model"
 )
 
 var registriesOutput string
@@ -29,7 +31,7 @@ var registriesListCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		items, body, err := ctrl.ListRegistries(cfg, registriesInvalidCert)
+		items, body, endpoint, err := ctrl.ListRegistries(cfg, registriesInvalidCert)
 		if err != nil {
 			fmt.Println("failed to list registries:", err)
 			if body != "" {
@@ -45,6 +47,21 @@ var registriesListCmd = &cobra.Command{
 			} else {
 				fmt.Println(pretty.String())
 			}
+			return
+		} else if registriesOutput == "ollama" {
+			header := model.OllamaHeader{
+				Command:     strings.Join(os.Args, " "),
+				Cluster:     "",
+				Risk:        "",
+				ReportTitle: "Kaspersky Container Security Registries Assessment Report.",
+				ApiEndpoint: endpoint,
+			}
+			response, err := ctrl.SendToOllama(body, header)
+			if err != nil {
+				fmt.Println("failed to send to ollama:", err)
+				os.Exit(1)
+			}
+			fmt.Println(response)
 			return
 		}
 
@@ -64,6 +81,6 @@ var registriesListCmd = &cobra.Command{
 
 func init() {
 	registriesCmd.AddCommand(registriesListCmd)
-	registriesListCmd.Flags().StringVarP(&registriesOutput, "output", "o", "", "output format (\"json\" for raw JSON output). Default: tabbed table")
+	registriesListCmd.Flags().StringVarP(&registriesOutput, "output", "o", "", "output format (\"json\" for raw JSON output, \"ollama\" to send to Ollama). Default: tabbed table")
 	registriesListCmd.Flags().BoolVarP(&registriesInvalidCert, "invalid-cert", "i", false, "ignore TLS certificate validation when performing API requests")
 }

@@ -60,6 +60,12 @@ func Save(toSave model.Config) error {
 	if toSave.CaCert != "" {
 		existing.CaCert = toSave.CaCert
 	}
+	if toSave.AiOllamaEndpoint != "" {
+		existing.AiOllamaEndpoint = toSave.AiOllamaEndpoint
+	}
+	if toSave.AiOllamaModel != "" {
+		existing.AiOllamaModel = toSave.AiOllamaModel
+	}
 
 	out, err := yaml.Marshal(&existing)
 	if err != nil {

@@ -10,23 +10,24 @@ import (
 
 // ListImages calls the /v1/images/registry endpoint with the provided rawQuery (URL-encoded).
 // Returns parsed items, raw response body and any error.
-func ListImages(cfg model.Config, invalidCert bool, rawQuery string) ([]model.ImageItem, string, error) {
+func ListImages(cfg model.Config, invalidCert bool, rawQuery string) ([]model.ImageItem, string, string, error) {
 	client, err := cfgsvc.NewClient(cfg.Endpoint, cfg.Token, invalidCert, cfg.CaCert)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
-	status, body, err := client.Do("GET", "/v1/images/registry", rawQuery, nil)
+	endpoint := "/v1/images/registry"
+	status, body, err := client.Do("GET", endpoint, rawQuery, nil)
 	if err != nil {
-		return nil, string(body), err
+		return nil, string(body), endpoint, err
 	}
 	if status < 200 || status >= 300 {
-		return nil, string(body), fmt.Errorf("received HTTP %d", status)
+		return nil, string(body), endpoint, fmt.Errorf("received HTTP %d", status)
 	}
 
 	var ir model.ImagesResponse
 	if err := json.Unmarshal(body, &ir); err != nil {
-		return nil, string(body), fmt.Errorf("failed to parse images JSON: %w", err)
+		return nil, string(body), endpoint, fmt.Errorf("failed to parse images JSON: %w", err)
 	}
-	return ir.Items, string(body), nil
+	return ir.Items, string(body), endpoint, nil
 }
